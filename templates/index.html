@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghibli AI Art Generator</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f7ff;
+        }
+        
+        .ghibli-gradient {
+            background: linear-gradient(to right, #68a0e3, #4682b4);
+        }
+        
+        .image-container {
+            transition: transform 0.3s ease;
+        }
+        
+        .image-container:hover {
+            transform: translateY(-5px);
+        }
+        
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="ghibli-gradient text-white shadow-lg">
+        <div class="container mx-auto py-6 px-4">
+            <h1 class="text-3xl font-bold">Ghibli AI Art Generator</h1>
+            <p class="text-blue-100 mt-2">Transform your ideas into magical Ghibli-style artwork</p>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Prompt Input -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <form id="generateForm" class="space-y-4">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-grow">
+                        <label for="prompt" class="block text-gray-700 font-medium mb-2">Enter your prompt</label>
+                        <input 
+                            type="text" 
+                            id="prompt" 
+                            name="prompt" 
+                            placeholder="Describe the scene you want to create..."
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200 focus:border-blue-500 transition"
+                            required
+                        >
+                    </div>
+                    <div class="flex items-end">
+                        <button 
+                            type="submit" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+                        >
+                            Generate Artwork
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="font-medium text-gray-700 mb-2">Prompt Suggestions:</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for suggestion in sample_prompts %}
+                            <button 
+                                type="button"
+                                class="suggestion-btn bg-blue-100 text-blue-700 text-sm py-1 px-3 rounded-full hover:bg-blue-200 transition-colors"
+                                data-prompt="{{ suggestion }}"
+                            >
+                                {{ suggestion }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Loading and Results -->
+        <div id="loadingContainer" class="hidden">
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8 text-center">
+                <h2 class="text-xl font-bold mb-4">Creating your Ghibli masterpiece...</h2>
+                <div class="loader"></div>
+                <p class="text-gray-600 mt-2">This may take a few moments</p>
+            </div>
+        </div>
+        
+        <div id="resultContainer" class="hidden">
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+                <h2 class="text-xl font-bold mb-4">Your Generated Artwork</h2>
+                <div class="flex flex-col items-center">
+                    <div class="relative group max-w-2xl">
+                        <img 
+                            id="generatedImage" 
+                            src="" 
+                            alt="Generated Ghibli-style artwork"
+                            class="rounded-lg shadow-md max-w-full"
+                        >
+                        <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                            <div class="flex gap-3">
+                                <button id="downloadBtn" class="bg-white p-3 rounded-full hover:bg-gray-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                </button>
+                                <button id="shareBtn" class="bg-white p-3 rounded-full hover:bg-gray-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                    </svg>
+                                </button>
+                                <button id="regenerateBtn" class="bg-white p-3 rounded-full hover:bg-gray-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p id="resultPrompt" class="mt-4 text-gray-600 italic"></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- History Section -->
+        {% if history %}
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Your Creation History</h2>
+                <form action="/clear_history" method="post">
+                    <button type="submit" class="text-sm text-red-500 hover:text-red-700">Clear History</button>
+                </form>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for item in history %}
+                <div class="border rounded-lg overflow-hidden hover:shadow-md transition-shadow image-container">
+                    <div class="h-48">
+                        <img src="{{ item.image_url }}" alt="{{ item.prompt }}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-3">
+                        <p class="text-sm text-gray-600 truncate">{{ item.prompt }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-blue-800 text-white py-6 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>Created with ❤️ | Inspired by Studio Ghibli</p>
+            <p class="text-sm mt-2 text-blue-200">This is a fan project and is not affiliated with Studio Ghibli</p>
+        </div>
+    </footer>
+    
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const generateForm = document.getElementById('generateForm');
+            const promptInput = document.getElementById('prompt');
+            const loadingContainer = document.getElementById('loadingContainer');
+            const resultContainer = document.getElementById('resultContainer');
+            const generatedImage = document.getElementById('generatedImage');
+            const resultPrompt = document.getElementById('resultPrompt');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const shareBtn = document.getElementById('shareBtn');
+            const regenerateBtn = document.getElementById('regenerateBtn');
+            const suggestionBtns = document.querySelectorAll('.suggestion-btn');
+            
+            // Set suggestion prompts
+            suggestionBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    promptInput.value = btn.dataset.prompt;
+                });
+            });
+            
+            // Form submission
+            generateForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const prompt = promptInput.value.trim();
+                if (!prompt) return;
+                
+                // Show loading
+                loadingContainer.classList.remove('hidden');
+                resultContainer.classList.add('hidden');
+                
+                try {
+                    // Submit the form using FormData
+                    const formData = new FormData();
+                    formData.append('prompt', prompt);
+                    
+                    const response = await fetch('/generate', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        alert(`Error: ${data.error}`);
+                        return;
+                    }
+                    
+                    // Update and show result
+                    generatedImage.src = data.image_url;
+                    resultPrompt.textContent = `"${prompt}"`;
+                    
+                    // Setup download button
+                    downloadBtn.onclick = () => {
+                        const a = document.createElement('a');
+                        a.href = data.image_url;
+                        a.download = `ghibli-art-${Date.now()}.png`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    };
+                    
+                    // Setup share button (basic clipboard share)
+                    shareBtn.onclick = () => {
+                        const url = window.location.origin + data.image_url;
+                        if (navigator.share) {
+                            navigator.share({
+                                title: 'My Ghibli AI Art',
+                                text: `Check out this Ghibli-style artwork: "${prompt}"`,
+                                url: url
+                            });
+                        } else {
+                            navigator.clipboard.writeText(url)
+                                .then(() => alert('Image URL copied to clipboard!'))
+                                .catch(err => alert('Failed to copy URL'));
+                        }
+                    };
+                    
+                    // Setup regenerate button
+                    regenerateBtn.onclick = () => {
+                        generateForm.dispatchEvent(new Event('submit'));
+                    };
+                    
+                } catch (error) {
+                    alert('An error occurred while generating the image');
+                    console.error(error);
+                } finally {
+                    // Hide loading, show result
+                    loadingContainer.classList.add('hidden');
+                    resultContainer.classList.remove('hidden');
+                    resultContainer.classList.add('fade-in');
+                    
+                    // Scroll to result
+                    resultContainer.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
