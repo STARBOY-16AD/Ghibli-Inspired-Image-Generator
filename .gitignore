@@ -1,3 +1,4 @@
 #ignores the venv file
 venv/
 
+**/.env
